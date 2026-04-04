@@ -649,16 +649,30 @@ html, body { height: 100%; background: var(--bg); color: var(--t0); font-family:
           <div class="card">
             <div class="card-h card-h-ai">Anthropic API key — Claude AI analysis</div>
             <div class="card-b">
-              <div style="background:var(--ai2);border-radius:4px;padding:10px;font-size:10px;color:var(--t1);font-family:var(--mono);line-height:1.7;margin-bottom:12px">
-                Required for <strong style="color:var(--ai)">Claude AI pattern analysis</strong>. Claude reads real indicator values and candle patterns, identifies market structure, and gives you a confidence-weighted signal verdict in plain English. Get a key at <strong style="color:var(--gold)">console.anthropic.com</strong>.
+              <!-- CORS explanation banner -->
+              <div style="background:rgba(255,61,90,0.08);border:1px solid rgba(255,61,90,0.25);border-radius:5px;padding:10px 12px;font-size:10px;color:var(--t1);font-family:var(--mono);line-height:1.7;margin-bottom:12px">
+                <strong style="color:var(--bear)">⚠ Why you see "Failed to fetch":</strong> Browsers block direct calls to api.anthropic.com from hosted websites (CORS security policy). This affects GitHub Pages, Netlify, and all static hosts. <strong style="color:var(--t0)">The fix is a free Vercel proxy</strong> — a tiny server-side function that makes the API call for you. Takes 3 minutes to set up below.
+              </div>
+
+              <!-- Proxy URL (primary fix) -->
+              <div style="background:var(--ai2);border:1px solid var(--ai3);border-radius:5px;padding:10px 12px;margin-bottom:12px">
+                <div style="font-family:var(--cond);font-size:11px;font-weight:700;color:var(--ai);margin-bottom:8px">Step 1 — Deploy Vercel Proxy (fixes CORS permanently)</div>
+                <label class="inp-l">Your Vercel proxy URL (after deploying)</label>
+                <input class="inp" id="proxy-url" type="text" placeholder="https://your-proxy.vercel.app/api/claude" style="margin-bottom:8px">
+                <button onclick="saveProxyUrl()" style="width:100%;padding:8px;background:var(--ai);color:#fff;border:none;border-radius:4px;font-family:var(--cond);font-size:12px;font-weight:700;cursor:pointer">Save Proxy URL</button>
+                <div id="proxy-result" style="display:none;margin-top:8px;padding:7px 10px;border-radius:4px;font-size:10px;font-family:var(--mono)"></div>
+              </div>
+
+              <div style="background:var(--bg3);border-radius:4px;padding:10px;font-size:10px;color:var(--t1);font-family:var(--mono);line-height:1.7;margin-bottom:12px">
+                Required for <strong style="color:var(--ai)">Claude AI pattern analysis</strong>. Get your key at <strong style="color:var(--gold)">console.anthropic.com</strong>. Add $5 credit — each analysis costs ~$0.01.
               </div>
               <div id="ai-key-status" style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:4px;background:var(--ai2);border:1px solid var(--ai3);margin-bottom:12px;font-size:10px;font-family:var(--mono)">
                 <div class="dot-warn"></div><span id="ai-key-txt">No key — AI analysis disabled</span>
               </div>
-              <label class="inp-l">Anthropic API key</label>
+              <label class="inp-l">Anthropic API key (stored in Vercel env — not here)</label>
               <input class="inp" id="anth-key" type="password" placeholder="sk-ant-api03-...">
               <div style="display:flex;gap:7px">
-                <button onclick="saveAnthKey()" style="flex:1;padding:9px;background:var(--ai);color:#fff;border:none;border-radius:4px;font-family:var(--cond);font-size:13px;font-weight:700;cursor:pointer">Save & Activate</button>
+                <button onclick="saveAnthKey()" style="flex:1;padding:9px;background:var(--ai);color:#fff;border:none;border-radius:4px;font-family:var(--cond);font-size:13px;font-weight:700;cursor:pointer">Save Key (browser only)</button>
                 <button onclick="clearAnthKey()" style="padding:9px 12px;background:transparent;color:var(--bear);border:1px solid rgba(255,61,90,0.2);border-radius:4px;font-family:var(--mono);font-size:11px;cursor:pointer">Clear</button>
               </div>
               <div id="anth-result" style="display:none;margin-top:9px;padding:7px 10px;border-radius:4px;font-size:10px;font-family:var(--mono)"></div>
@@ -675,9 +689,18 @@ html, body { height: 100%; background: var(--bg); color: var(--t0); font-family:
           <div class="card"><div class="card-h">How to get Anthropic key</div><div class="card-b">
             <div class="step"><div class="step-n">1</div><div class="step-t">Go to <strong>console.anthropic.com</strong></div></div>
             <div class="step"><div class="step-n">2</div><div class="step-t">Create account → <strong>API Keys</strong> → <strong>Create Key</strong></div></div>
-            <div class="step"><div class="step-n">3</div><div class="step-t">Copy the key — starts with <strong>sk-ant-api03-</strong></div></div>
-            <div class="step"><div class="step-n">4</div><div class="step-t">Add $5 credit to your account for API usage (costs ~$0.01 per analysis)</div></div>
-            <div class="step"><div class="step-n">5</div><div class="step-t">Paste above → <strong>Save & Activate</strong>. Claude analyzes every refresh automatically.</div></div>
+            <div class="step"><div class="step-n">3</div><div class="step-t">Add $5 credit → Billing (each AI call costs ~$0.01)</div></div>
+            <div class="step"><div class="step-n">4</div><div class="step-t">Copy key starting with <strong>sk-ant-api03-</strong></div></div>
+          </div></div>
+          <div class="card"><div class="card-h card-h-ai">⚡ Fix CORS — Deploy Vercel Proxy (3 min)</div><div class="card-b">
+            <div style="background:var(--ai2);border-radius:4px;padding:9px;font-size:10px;color:var(--t1);font-family:var(--mono);line-height:1.7;margin-bottom:12px">This creates a tiny free server that calls Anthropic on your behalf — solving the CORS issue permanently. Free on Vercel forever.</div>
+            <div class="step"><div class="step-n">1</div><div class="step-t">Go to <strong>vercel.com</strong> → Sign Up with GitHub</div></div>
+            <div class="step"><div class="step-n">2</div><div class="step-t">Click <strong>Add New → Project</strong> → <strong>Import Git Repository</strong></div></div>
+            <div class="step"><div class="step-n">3</div><div class="step-t">Create a new GitHub repo called <strong>gtp-proxy</strong> and upload the proxy files from the ZIP (the <strong>gold-trader-proxy</strong> folder)</div></div>
+            <div class="step"><div class="step-n">4</div><div class="step-t">In Vercel, before deploying, go to <strong>Environment Variables</strong> and add:<div class="code">Name: ANTHROPIC_API_KEY</div><div class="code">Value: sk-ant-api03-your-key-here</div></div></div>
+            <div class="step"><div class="step-n">5</div><div class="step-t">Click <strong>Deploy</strong>. Vercel gives you a URL like:<div class="code">https://gtp-proxy.vercel.app</div></div></div>
+            <div class="step"><div class="step-n">6</div><div class="step-t">Your proxy URL is:<div class="code">https://gtp-proxy.vercel.app/api/claude</div>Paste this into the <strong>Proxy URL field</strong> on the left and click Save.</div></div>
+            <div class="step"><div class="step-n">7</div><div class="step-t">Click <strong>Refresh</strong> in the app — Claude AI now works with no CORS error ✓</div></div>
           </div></div>
         </div>
       </div>
@@ -731,10 +754,63 @@ html, body { height: 100%; background: var(--bg); color: var(--t0); font-family:
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 // ── KEYS (localStorage) ────────────────────────────────────────────
-const K_TD   = 'gtp_td_v6';
-const K_ANTH = 'gtp_anth_v6';
-let tdKey   = localStorage.getItem(K_TD)   || '';
-let anthKey = localStorage.getItem(K_ANTH) || '';
+const K_TD    = 'gtp_td_v6';
+const K_ANTH  = 'gtp_anth_v6';
+const K_PROXY = 'gtp_proxy_url';
+let tdKey    = localStorage.getItem(K_TD)    || '';
+let anthKey  = localStorage.getItem(K_ANTH)  || '';
+let proxyUrl = localStorage.getItem(K_PROXY) || '';
+
+// ── CLAUDE API ROUTER ──────────────────────────────────────────────
+// CORS EXPLAINED: Browsers block direct calls to api.anthropic.com
+// from hosted pages (GitHub Pages, Netlify, etc.).
+// Solution: A Vercel serverless function acts as a server-side proxy.
+// The API key lives in Vercel environment variables — never the browser.
+//
+// Three routes tried in order:
+//  1. Vercel proxy URL (best — no CORS, key server-side)
+//  2. Direct call with browser key (works locally, blocked on GitHub Pages)
+//  3. Error with clear instructions
+async function callClaudeAPI(messages, maxTokens, systemPrompt) {
+  // Route 1: Vercel proxy
+  if(proxyUrl && proxyUrl.startsWith('http')) {
+    const r = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, max_tokens: maxTokens || 500, system: systemPrompt }),
+      signal: AbortSignal.timeout(28000),
+    });
+    if(!r.ok) { const e = await r.json().catch(()=>({error:'Proxy error '+r.status})); throw new Error(e.error || 'Proxy error '+r.status); }
+    return await r.json();
+  }
+  // Route 2: Direct browser call (CORS blocked on GitHub Pages — works locally only)
+  if(anthKey && anthKey.length > 20) {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens || 500,
+        system: systemPrompt,
+        messages,
+      }),
+      signal: AbortSignal.timeout(28000),
+    });
+    if(!r.ok) {
+      const e = await r.json().catch(()=>({}));
+      if(r.status === 401) throw new Error('Invalid API key — check console.anthropic.com');
+      if(r.status === 403) throw new Error('CORS_BLOCKED');
+      throw new Error(e?.error?.message || 'API error ' + r.status);
+    }
+    return await r.json();
+  }
+  throw new Error('NO_CONFIG');
+}
 
 // ── STATE ──────────────────────────────────────────────────────────
 let livePrice = 4758.13, prevPrice = 4758.13;
@@ -997,8 +1073,10 @@ function generateSignal(ind, tf) {
 // ══════════════════════════════════════════════════════════════════
 
 async function runClaudeAnalysis(ind, sig, tf, candles) {
-  if(!anthKey || anthKey.length < 20) {
-    updateAIPanel('No Anthropic API key set. Add your key in API Keys page for AI analysis.', false);
+  // Need either a proxy URL or a direct key
+  const hasConfig = (proxyUrl && proxyUrl.startsWith('http')) || (anthKey && anthKey.length > 20);
+  if(!hasConfig) {
+    updateAIPanel('Set up AI: add your Vercel proxy URL or Anthropic key in API Keys page.', false);
     return;
   }
   if(isAnalyzing) return;
@@ -1006,8 +1084,6 @@ async function runClaudeAnalysis(ind, sig, tf, candles) {
   setAIStatus('analyzing');
 
   const tfLabel = TF_MAP[tf]?.lbl || tf;
-
-  // Build last 10 candles summary for Claude
   const recentCandles = candles.slice(-10).map((c,i) =>
     `${i+1}. O:${c.open.toFixed(2)} H:${c.high.toFixed(2)} L:${c.low.toFixed(2)} C:${c.close.toFixed(2)}`
   ).join('\n');
@@ -1017,7 +1093,7 @@ async function runClaudeAnalysis(ind, sig, tf, candles) {
 TIMEFRAME: ${tfLabel}
 CURRENT PRICE: $${ind.price.toFixed(2)}
 
-COMPUTED INDICATORS (calculated from real TwelveData candles):
+COMPUTED INDICATORS (from real TwelveData candles):
 - RSI (14): ${ind.rsi.toFixed(2)} ${ind.rsi < 30 ? '⚠ OVERSOLD' : ind.rsi > 70 ? '⚠ OVERBOUGHT' : '— neutral'}
 - Stochastic RSI: ${ind.stochRSI.toFixed(2)}
 - EMA 20: $${ind.ema20.toFixed(2)} (price ${ind.price > ind.ema20 ? 'ABOVE' : 'BELOW'})
@@ -1027,58 +1103,46 @@ COMPUTED INDICATORS (calculated from real TwelveData candles):
 - MACD line: ${ind.macd.toFixed(4)} | Signal: ${ind.macdSignal.toFixed(4)} | Histogram: ${ind.macdHist.toFixed(4)}
 - MACD histogram ${ind.macdHistRising ? '▲ RISING' : '▼ FALLING'}
 - Bollinger Upper: $${ind.bbUpper.toFixed(2)} | Lower: $${ind.bbLower.toFixed(2)} | %B: ${(ind.bbPctB*100).toFixed(1)}%
-- ATR (14): ${ind.atr.toFixed(2)} (volatility measure)
-- RSI divergence: ${ind.bullishDivergence ? 'BULLISH divergence detected' : ind.bearishDivergence ? 'BEARISH divergence detected' : 'None'}
+- ATR (14): ${ind.atr.toFixed(2)}
+- RSI divergence: ${ind.bullishDivergence ? 'BULLISH' : ind.bearishDivergence ? 'BEARISH' : 'None'}
+CONFLUENCE: ${sig.score}/7 → ${sig.type}
+LAST 10 CANDLES:\n${recentCandles}
+S/R: Support $4,645|$4,577|$4,510 · Resistance $4,701|$4,761|$4,822
 
-CONFLUENCE SCORE: ${sig.isBuy ? sig.longScore : sig.shortScore}/7 → Signal: ${sig.type}
-
-LAST 10 CANDLES:
-${recentCandles}
-
-KEY S/R LEVELS:
-Support: $4,645 | $4,577 | $4,510 | $4,441 | $4,376
-Resistance: $4,701 | $4,761 | $4,822 | $4,882 | $4,938
-
-TASK: Give me your professional analysis. Be direct and concise. Structure your response as:
-
+Respond EXACTLY in this format:
 VERDICT: [STRONG BUY / BUY / NEUTRAL / SELL / STRONG SELL]
 CONFIDENCE: [0-100]%
 DIRECTION: [LONG / SHORT / WAIT]
-
-ANALYSIS: (2-3 sentences explaining the most important pattern/signal you see)
-
+ANALYSIS: [2-3 sentences on the key pattern]
 KEY LEVEL TO WATCH: $[price]
-RISK: [the biggest thing that could invalidate this signal]`;
+RISK: [main invalidation scenario]`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await response.json();
+    const sysPrompt = 'You are a professional XAUUSD technical analyst. Be direct, precise, and structured.';
+    const data = await callClaudeAPI([{ role: 'user', content: prompt }], 450, sysPrompt);
     const text = data?.content?.[0]?.text || '';
     if(text) {
       lastAiAnalysis = text;
       updateAIPanel(text, true);
-      // Extract confidence for display
       const confMatch = text.match(/CONFIDENCE:\s*(\d+)/i);
       const conf = confMatch ? parseInt(confMatch[1]) : null;
-      // Extract verdict
       const verdictMatch = text.match(/VERDICT:\s*([A-Z ]+)/i);
       const verdict = verdictMatch ? verdictMatch[1].trim() : null;
       if(conf && verdict) updateAIMetric(conf, verdict, tfLabel);
       setAIStatus('done', conf);
     } else {
-      updateAIPanel('AI response empty. Check your Anthropic API key has credit.', false);
+      updateAIPanel('AI returned empty response. Check API key has credit at console.anthropic.com', false);
       setAIStatus('error');
     }
   } catch(e) {
-    updateAIPanel('AI request failed: ' + e.message, false);
+    const msg = e.message;
+    if(msg === 'NO_CONFIG') {
+      updateAIPanel('Add your Anthropic key or Vercel proxy URL in API Keys page.', false);
+    } else if(msg === 'CORS_BLOCKED' || msg.includes('fetch')) {
+      updateAIPanel('⚠ CORS blocked: Browsers cannot call Anthropic API directly from GitHub Pages. Deploy the Vercel proxy (see API Keys page for instructions) and add the proxy URL there.', false);
+    } else {
+      updateAIPanel('AI error: ' + msg, false);
+    }
     setAIStatus('error');
   }
   isAnalyzing = false;
@@ -1086,8 +1150,9 @@ RISK: [the biggest thing that could invalidate this signal]`;
 
 // Ask Claude a free-form question about gold
 async function askClaude() {
-  if(!anthKey || anthKey.length < 20) {
-    showToastMsg('Add your Anthropic API key in API Keys page first', 't-ai');
+  const hasConfig = (proxyUrl && proxyUrl.startsWith('http')) || (anthKey && anthKey.length > 20);
+  if(!hasConfig) {
+    showToastMsg('Add Anthropic key or proxy URL in API Keys page', 't-ai');
     goView('keys'); return;
   }
   const q = document.getElementById('ai-question').value.trim();
@@ -1095,28 +1160,25 @@ async function askClaude() {
   const block = document.getElementById('ai-answer-block');
   const txt = document.getElementById('ai-answer-text');
   if(block) block.style.display = 'block';
-  if(txt) { txt.textContent = 'Claude is thinking...'; txt.style.color = 'var(--ai)'; }
+  if(txt) { txt.innerHTML = '<div style="display:flex;align-items:center;gap:8px"><div class="ai-spinner"></div><span style="color:var(--ai)">Claude is thinking...</span></div>'; }
 
-  const context = lastIndicators.rsi ? `Current XAUUSD context: Price $${lastIndicators.price?.toFixed(2)}, RSI ${lastIndicators.rsi?.toFixed(1)}, MACD ${lastIndicators.macdHist > 0 ? 'bullish' : 'bearish'}, Trend ${lastIndicators.trendBull ? 'bullish' : 'bearish'}.` : '';
+  const context = lastIndicators.rsi
+    ? `Current XAUUSD: Price $${lastIndicators.price?.toFixed(2)}, RSI ${lastIndicators.rsi?.toFixed(1)}, MACD ${lastIndicators.macdHist > 0 ? 'bullish' : 'bearish'}, Trend ${lastIndicators.trendBull ? 'bullish' : 'bearish'}.`
+    : 'Current XAUUSD price approximately $4,676.';
 
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: `You are a professional XAUUSD trader and technical analyst. ${context}\n\nQuestion: ${q}\n\nAnswer directly and practically. Be concise. Focus on actionable insight.`
-        }]
-      })
-    });
-    const d = await r.json();
+    const sysPrompt = 'You are a professional XAUUSD forex/gold trader. Answer concisely and practically. Focus on actionable insight.';
+    const d = await callClaudeAPI([{ role: 'user', content: `${context}\n\nQuestion: ${q}` }], 600, sysPrompt);
     const ans = d?.content?.[0]?.text || 'No response.';
     if(txt) { txt.textContent = ans; txt.style.color = 'var(--t0)'; }
   } catch(e) {
-    if(txt) { txt.textContent = 'Error: ' + e.message; txt.style.color = 'var(--bear)'; }
+    const msg = e.message;
+    if(txt) {
+      txt.style.color = 'var(--bear)';
+      txt.textContent = msg.includes('CORS') || msg.includes('fetch')
+        ? 'CORS error: Deploy the Vercel proxy (see API Keys page) to fix this.'
+        : 'Error: ' + msg;
+    }
   }
 }
 
@@ -1287,8 +1349,9 @@ async function runFullAnalysis() {
   // Step 5: update all UI
   updateAllUI(ind, sig);
 
-  // Step 6: run Claude AI analysis (if Anthropic key available)
-  if(anthKey && anthKey.length > 20 && ind && sig) {
+  // Step 6: run Claude AI analysis (if proxy or key available)
+  const hasAI = (proxyUrl && proxyUrl.startsWith('http')) || (anthKey && anthKey.length > 20);
+  if(hasAI && ind && sig) {
     await runClaudeAnalysis(ind, sig, currentTF, candles || []);
   }
 
@@ -1630,6 +1693,13 @@ function calcLot() {
 }
 
 // ── API KEY MANAGEMENT ────────────────────────────────────────────
+function saveProxyUrl() {
+  const v = document.getElementById('proxy-url')?.value.trim();
+  if(!v || !v.startsWith('http')) { showKR('proxy','Enter a valid https:// URL','bear'); return; }
+  proxyUrl = v; localStorage.setItem(K_PROXY, v);
+  updateAnthStatus();
+  showKR('proxy','Proxy URL saved! Click Refresh to test Claude AI.','bull');
+}
 function saveTDKey() { const v=document.getElementById('td-key').value.trim(); if(!v){showKR('td','Enter key first','bear');return;} tdKey=v;localStorage.setItem(K_TD,v);updateTDStatus();showKR('td','Saved! Fetching real candles now...','bull');runFullAnalysis(); }
 function clearTDKey() { tdKey='';localStorage.removeItem(K_TD);document.getElementById('td-key').value='';updateTDStatus();showKR('td','Cleared.','bear'); }
 async function testTDKey() {
@@ -1648,13 +1718,26 @@ function updateTDStatus() {
   if(tdKey&&tdKey.length>8){el.style.background='rgba(0,229,150,0.08)';el.style.borderColor='rgba(0,229,150,0.2)';el.innerHTML='<div class="dot-live" style="background:var(--bull)"></div><span>TwelveData active — real candle data ✓</span>';}
   else{el.style.background='var(--ga)';el.style.borderColor='rgba(240,180,41,0.2)';el.innerHTML='<div class="dot-warn"></div><span id="td-status-txt">No key — add for real indicator calculations</span>';}
 }
-function saveAnthKey() { const v=document.getElementById('anth-key').value.trim(); if(!v){showKR('anth','Enter key first','bear');return;} anthKey=v;localStorage.setItem(K_ANTH,v);updateAnthStatus();showKR('anth','Saved! AI analysis will run on next refresh.','bull'); }
-function clearAnthKey() { anthKey='';localStorage.removeItem(K_ANTH);document.getElementById('anth-key').value='';updateAnthStatus();showKR('anth','Cleared.','bear'); }
+function saveAnthKey() { const v=document.getElementById('anth-key').value.trim(); if(!v){showKR('anth','Enter key first','bear');return;} anthKey=v;localStorage.setItem(K_ANTH,v);updateAnthStatus();showKR('anth','Key saved in browser. Note: use Vercel proxy for GitHub Pages (CORS fix).','bull'); }
+function clearAnthKey() { anthKey='';localStorage.removeItem(K_ANTH);if(document.getElementById('anth-key'))document.getElementById('anth-key').value='';updateAnthStatus();showKR('anth','Cleared.','bear'); }
 function updateAnthStatus() {
-  const el=document.getElementById('ai-key-status');const t=document.getElementById('ai-key-txt');
-  if(!el||!t)return;
-  if(anthKey&&anthKey.length>20){el.style.background='var(--ai2)';el.style.borderColor='var(--ai3)';el.innerHTML='<div class="dot-ai"></div><span>Claude AI active — pattern analysis enabled ✓</span>';setAIStatus('ready');}
-  else{el.innerHTML='<div class="dot-warn"></div><span id="ai-key-txt">No key — AI analysis disabled</span>';setAIStatus('idle');}
+  const el=document.getElementById('ai-key-status');
+  const inp=document.getElementById('anth-key');if(inp&&!inp.value&&anthKey)inp.value=anthKey;
+  const pu=document.getElementById('proxy-url');if(pu&&!pu.value&&proxyUrl)pu.value=proxyUrl;
+  if(!el)return;
+  if(proxyUrl&&proxyUrl.startsWith('http')){
+    el.style.background='var(--ai2)';el.style.borderColor='var(--ai3)';
+    el.innerHTML='<div class="dot-ai"></div><span style="color:var(--ai)">Vercel proxy active — CORS fixed · Claude AI ready ✓</span>';
+    setAIStatus('ready');
+  } else if(anthKey&&anthKey.length>20){
+    el.style.background='rgba(240,180,41,0.08)';el.style.borderColor='rgba(240,180,41,0.2)';
+    el.innerHTML='<div class="dot-warn"></div><span style="color:var(--gold)">Key stored in browser — may be blocked by CORS on GitHub Pages. Add Vercel proxy URL above to fix.</span>';
+    setAIStatus('ready');
+  } else {
+    el.style.background='var(--ai2)';el.style.borderColor='var(--ai3)';
+    el.innerHTML='<div class="dot-warn"></div><span id="ai-key-txt">No key or proxy — AI analysis disabled</span>';
+    setAIStatus('idle');
+  }
 }
 function showKR(which, msg, cls) {
   const id=which==='td'?'td-result':'anth-result';
