@@ -1314,6 +1314,7 @@ async function runFullAnalysis() {
     livePrice = spotResult.price;
     updatePriceUI();
     setDataStatus('live', spotResult.src);
+    localStorage.setItem('gtp_last_price', livePrice); // cache for weekend display
   }
 
   // Step 2: fetch candles (if TwelveData key available)
@@ -1610,9 +1611,110 @@ function updatePriceUI() {
   const slp=document.getElementById('sa-live-p');if(slp)slp.textContent=ps;
 }
 
+// ══ MARKET HOURS ENGINE ════════════════════════════════════════════
+// XAUUSD: Mon 00:00 UTC open → Fri 22:00 UTC close
+// Sessions: Sydney(21-06), Tokyo(00-09), London(08-17), NY(13-22)
+// ══════════════════════════════════════════════════════════════════
+
+function getMarketState() {
+  const now = new Date();
+  const d = now.getUTCDay();   // 0=Sun,1=Mon..5=Fri,6=Sat
+  const h = now.getUTCHours();
+  const m = now.getUTCMinutes();
+  const mins = h * 60 + m;
+
+  const isClosed = d === 6 || d === 0 || (d === 5 && mins >= 22*60);
+
+  if(isClosed) {
+    let minsLeft;
+    if(d === 5) minsLeft = (3*24*60) - (mins - 22*60);
+    else if(d === 6) minsLeft = (2*24*60) - mins;
+    else minsLeft = (24*60) - mins;
+    const hL = Math.floor(minsLeft/60), mL = minsLeft%60;
+    return { open:false, session:'CLOSED', color:'var(--bear)', note:'Opens Mon · '+hL+'h '+mL+'m', interval:5*60*1000 };
+  }
+
+  // Active sessions
+  const inSydney  = mins >= 21*60 || mins < 6*60;
+  const inTokyo   = mins >= 0    && mins < 9*60;
+  const inLondon  = mins >= 8*60 && mins < 17*60;
+  const inNY      = mins >= 13*60 && mins < 22*60;
+  const peakLdnNY = mins >= 13*60 && mins < 17*60;
+
+  if(peakLdnNY)   return { open:true, session:'🔥 London + NY', color:'var(--bull)', note:'Peak volatility', interval:30*1000 };
+  if(inLondon)    return { open:true, session:'🟡 London',       color:'var(--gold)', note:'Active session',  interval:60*1000 };
+  if(inNY)        return { open:true, session:'🟡 New York',     color:'var(--gold)', note:'Active session',  interval:60*1000 };
+  if(inTokyo)     return { open:true, session:'🔵 Tokyo',        color:'var(--ai)',   note:'Asian session',   interval:2*60*1000 };
+  if(inSydney)    return { open:true, session:'🔵 Sydney',       color:'var(--ai)',   note:'Asian session',   interval:2*60*1000 };
+  return             { open:true, session:'⚪ Open (quiet)',    color:'var(--t2)',   note:'Low volume',      interval:3*60*1000 };
+}
+
+function updateSessionUI() {
+  const s = getMarketState();
+  let el = document.getElementById('mkt-bar');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'mkt-bar';
+    el.style.cssText = 'font-size:10px;font-family:var(--mono);flex-shrink:0;padding:3px 8px;border-radius:3px;border:1px solid;white-space:nowrap;';
+    const tb = document.querySelector('.tb-right');
+    if(tb) tb.insertBefore(el, tb.firstChild);
+  }
+  if(s.open) {
+    el.style.color = s.color;
+    el.style.background = 'transparent';
+    el.style.borderColor = s.color.replace(')',',0.2)').replace('var(','rgba(').replace('--bull','0,229,150').replace('--gold','240,180,41').replace('--ai','124,111,255').replace('--t2','80,80,100');
+    el.textContent = s.session + ' · ' + s.note;
+  } else {
+    el.style.color = 'var(--bear)';
+    el.style.background = 'rgba(255,61,90,0.08)';
+    el.style.borderColor = 'rgba(255,61,90,0.25)';
+    el.textContent = '🔴 Closed · ' + s.note;
+    // Show last price clearly (not Loading...)
+    const tp = document.getElementById('tb-price');
+    if(tp && livePrice > 1000) tp.textContent = '$'+livePrice.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})+' (last)';
+    const tc = document.getElementById('tb-chg');
+    if(tc) { tc.textContent = 'Weekend — market reopens Monday'; tc.style.color='var(--t2)'; }
+  }
+  return s;
+}
+
 function startTimer() {
-  timerCount=30;clearInterval(timerInt);
-  timerInt=setInterval(()=>{timerCount--;const el=document.getElementById('timer');if(el)el.textContent=timerCount+'s';if(timerCount<=0)runFullAnalysis();},1000);
+  clearInterval(timerInt);
+  const s = updateSessionUI();
+
+  if(!s.open) {
+    // Market closed — freeze UI, check every 5 min for open
+    const te = document.getElementById('timer'); if(te) te.textContent = 'closed';
+    const dd = document.getElementById('data-dot'); if(dd){dd.style.background='var(--bear)';dd.className='dot-dead';}
+    const ds = document.getElementById('data-status'); if(ds) ds.textContent = 'Market closed · weekend';
+    // Show chip as closed
+    const chip = document.getElementById('sig-chip');
+    if(chip) { chip.style.cssText='background:rgba(255,61,90,0.08);border-color:rgba(255,61,90,0.2);color:var(--bear)'; }
+    const ct = document.getElementById('sig-chip-txt'); if(ct) ct.textContent = 'Market closed · reopens Monday';
+    const ci = document.getElementById('sig-chip-icon'); if(ci) ci.textContent = '🔴';
+    timerCount = 300;
+    timerInt = setInterval(() => {
+      timerCount--;
+      const newS = getMarketState();
+      updateSessionUI();
+      if(timerCount <= 0 || newS.open) {
+        if(newS.open) { runFullAnalysis(); return; }
+        timerCount = 300;
+      }
+    }, 1000);
+    return;
+  }
+
+  // Market open — dynamic interval by session
+  const secs = Math.round(s.interval / 1000);
+  timerCount = secs;
+  const te = document.getElementById('timer'); if(te) te.textContent = secs+'s';
+  timerInt = setInterval(() => {
+    timerCount--;
+    updateSessionUI();
+    const te2 = document.getElementById('timer'); if(te2) te2.textContent = timerCount+'s';
+    if(timerCount <= 0) runFullAnalysis();
+  }, 1000);
 }
 
 function showToastMsg(msg, cls) {
@@ -1818,12 +1920,33 @@ window.addEventListener('DOMContentLoaded', () => {
   // Build TradingView chart — autosize fills container
   tvMain = buildTV('1min', 'tv_main');
 
-  // Run first analysis
-  runFullAnalysis();
   calcLot(); buildStats(); buildSRLevels(); buildHistory();
 
-  // Auto-refresh
-  setInterval(runFullAnalysis, 30000);
+  // Market-aware startup:
+  // If market is open → run full analysis immediately
+  // If market is closed → show closed state, wait for Monday
+  const initState = getMarketState();
+  updateSessionUI();
+  if(initState.open) {
+    runFullAnalysis();
+  } else {
+    // Weekend — show last price from storage or placeholder
+    const cached = parseFloat(localStorage.getItem('gtp_last_price') || '0');
+    if(cached > 1000) {
+      livePrice = cached;
+      const tp = document.getElementById('tb-price');
+      if(tp) tp.textContent = '$'+cached.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})+' (last)';
+      const tc = document.getElementById('tb-chg');
+      if(tc) { tc.textContent = 'Weekend — market reopens Monday 00:00 UTC'; tc.style.color='var(--t2)'; }
+      // Still compute indicators from last known price
+      const ind = approximateIndicators(cached);
+      lastIndicators = ind;
+      const sig = generateSignal(ind, currentTF);
+      lastSignal = sig;
+      updateAllUI(ind, sig);
+    }
+    startTimer(); // This handles the closed-market polling
+  }
 });
 </script>
 </body>
